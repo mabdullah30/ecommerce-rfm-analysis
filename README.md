@@ -1,9 +1,9 @@
 # E-Commerce Customer Intelligence Platform
 
 ## 🎬 Project Walkthrough Video
-Click the image below to watch a full 3-minute explanation of the data pipeline, DAX logic, and the interactive dashboard UI.
+Click the image below to watch a breif explanation of the data pipeline, DAX logic, and the interactive dashboard UI.
 
-[![Power BI Walkthrough](https://img.youtube.com/vi/SIcakHnlg4A/maxresdefault.jpg)](https://youtu.be/SIcakHnlg4A)
+[![Power BI Walkthrough](https://img.youtube.com/vi/-nrCGTDlSog/maxresdefault.jpg)](https://youtu.be/-nrCGTDlSog)
 
 ## 📌 Business Problem
 The client's marketing team lacked visibility into customer purchasing behaviors, resulting in a generalized marketing strategy. Without the ability to distinguish between high-value VIPs and churning customers, the company was wasting ad spend and missing critical retention opportunities.
