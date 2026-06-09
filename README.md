@@ -3,7 +3,7 @@
 ## 🎬 Project Walkthrough Video
 Click the image below to watch a breif explanation of the data pipeline, DAX logic, and the interactive dashboard UI.
 
-[![Power BI Walkthrough](https://img.youtube.com/vi/-nrCGTDlSog/maxresdefault.jpg)](https://youtu.be/-nrCGTDlSog)
+[![Power BI Walkthrough](https://img.youtube.com/vi/7i8I3ZFKrhg/maxresdefault.jpg)](https://youtu.be/7i8I3ZFKrhg)
 
 ## 📌 Business Problem
 The client's marketing team lacked visibility into customer purchasing behaviors, resulting in a generalized marketing strategy. Without the ability to distinguish between high-value VIPs and churning customers, the company was wasting ad spend and missing critical retention opportunities.
