@@ -12,8 +12,8 @@ The client's marketing team lacked visibility into customer purchasing behaviors
 Architected an end-to-end Customer Relationship Management (CRM) analytics pipeline using **PostgreSQL** and **Power BI**. The system automatically ingests raw transactional data, calculates Recency, Frequency, and Monetary (RFM) scores, and classifies customers into actionable, revenue-driven segments.
 
 ## 📊 Key Business Findings
-- **The VIP Dependency:** The "Champions" segment accounts for **$8.85M** of total historical revenue, despite representing a smaller fraction of the customer base.
-- **Churn Risk:** Identified **$407.70K** in revenue from "At Risk" customers who have high historical spend but declining recency. 
+- **The VIP Dependency:** The "Champions" segment accounts for **£8.85M** of total historical revenue, despite representing a smaller fraction of the customer base.
+- **Churn Risk:** Identified **£407.70K** in revenue from "At Risk" customers who have high historical spend but declining recency. 
 - **Dead Budget:** Flagged **515** "Lost" customers, allowing the marketing team to confidently exclude them from active ad campaigns and protect ROI.
 
 ## 🎯 Strategic Recommendations Provided
