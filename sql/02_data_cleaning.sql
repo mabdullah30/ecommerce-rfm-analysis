@@ -1,49 +1,43 @@
 -- ==============================================================================
--- 02: DATA CLEANING & STANDARDIZATION
--- Description: Cleans raw types, filters invalid transactions, and removes duplicates.
+-- 02: DATA CLEANING (v2)
+-- Builds transactions_clean from online_retail_raw. The raw table is not changed.
+-- Keeps valid sales only and removes exact duplicate rows (identical in every column).
+--
+-- v2 fix: v1 matched duplicates on invoice, customer, date, quantity and price only,
+-- so it also deleted different products on the same invoice that had the same
+-- quantity and price. v2 compares every column.
+-- Note: the dataset's two yearly sheets overlap on 1-9 Dec 2010, so those rows
+-- appear twice in the combined file. Exact-duplicate removal handles this.
 -- ==============================================================================
 
--- STEP 1: Standardize Data Types in Staging
-UPDATE online_retail_raw
-SET customer_id = REPLACE(customer_id, '.0', '');
+DROP TABLE IF EXISTS transactions_clean;
 
-ALTER TABLE online_retail_raw
-ALTER COLUMN customer_id TYPE INTEGER
-USING NULLIF(customer_id, '')::INTEGER;
-
-ALTER TABLE online_retail_raw
-ALTER COLUMN invoice_date TYPE TIMESTAMP
-USING invoice_date::TIMESTAMP;
-
--- STEP 2: Create Clean Fact Table
--- Removes null customers, negative quantities, and cancelled orders
 CREATE TABLE transactions_clean AS
-SELECT
+WITH typed AS (
+    SELECT
+        invoice_no,
+        stock_code,
+        description,
+        -- works whether customer_id is text ('13085.0') or already INTEGER
+        NULLIF(REPLACE(customer_id::TEXT, '.0', ''), '')::INTEGER AS customer_id,
+        invoice_date::TIMESTAMP AS invoice_date,
+        quantity,
+        unit_price,
+        country
+    FROM online_retail_raw
+)
+SELECT DISTINCT                      -- DISTINCT on every column = exact duplicates only
     invoice_no,
+    stock_code,
+    description,
     customer_id,
     invoice_date,
     quantity,
     unit_price,
-    ROUND(quantity * unit_price, 2) AS line_total,
+    ROUND((quantity * unit_price)::NUMERIC, 2) AS line_total,
     country
-FROM online_retail_raw
-WHERE customer_id IS NOT NULL
-  AND quantity > 0
-  AND unit_price > 0
-  AND invoice_no NOT LIKE 'C%';
-
--- STEP 3: Remove Exact Row Duplicates using Physical Location (ctid)
--- Ensures revenue is not artificially inflated by system logging errors
-DELETE FROM transactions_clean
-WHERE ctid IN (
-    SELECT ctid
-    FROM (
-        SELECT ctid,
-               ROW_NUMBER() OVER (
-                   PARTITION BY invoice_no, customer_id, invoice_date, quantity, unit_price
-                   ORDER BY ctid
-               ) as row_num
-        FROM transactions_clean
-    ) t
-    WHERE t.row_num > 1
-);
+FROM typed
+WHERE customer_id IS NOT NULL        -- guest checkouts cannot be segmented
+  AND quantity > 0                   -- returns
+  AND unit_price > 0                 -- free items and adjustments
+  AND invoice_no NOT LIKE 'C%';      -- cancelled invoices

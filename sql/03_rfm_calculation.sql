@@ -1,21 +1,29 @@
 -- ==============================================================================
--- 03: RFM METRIC CALCULATION & SCORING
--- Description: Calculates Recency, Frequency, and Monetary values and applies NTILE scoring.
+-- 03: RFM CALCULATION AND SCORING (v2)
+-- Calculates Recency, Frequency and Monetary values per customer, then scores
+-- each 1-5 with PERCENT_RANK.
+--
+-- v2 fix: NTILE(5) put customers with identical values (for example, the many
+-- one-order customers) into different scores, so results could change between
+-- runs. PERCENT_RANK gives equal values the same score every time.
 -- ==============================================================================
 
--- STEP 1: Calculate Raw RFM Values
+DROP TABLE IF EXISTS rfm_scored;
+DROP TABLE IF EXISTS rfm_raw;
+
+-- STEP 1: Raw RFM values
 CREATE TABLE rfm_raw AS
 WITH ref_date AS (
-    -- Dynamically set the reference date to 1 day after the last recorded transaction
+    -- reference date = 1 day after the last recorded transaction
     SELECT MAX(invoice_date) + INTERVAL '1 day' AS today
     FROM transactions_clean
 ),
 customer_stats AS (
     SELECT
         customer_id,
-        MAX(invoice_date) AS last_purchase,
+        MAX(invoice_date)          AS last_purchase,
         COUNT(DISTINCT invoice_no) AS frequency,
-        SUM(line_total) AS monetary
+        SUM(line_total)            AS monetary
     FROM transactions_clean
     GROUP BY customer_id
 )
@@ -27,25 +35,32 @@ SELECT
 FROM customer_stats cs
 CROSS JOIN ref_date rd;
 
--- STEP 2: Assign 1-5 Scores using Window Functions (NTILE)
+-- STEP 2: 1-5 scores (recency is reversed: fewer days = higher score)
 CREATE TABLE rfm_scored AS
+WITH ranked AS (
+    SELECT
+        customer_id,
+        recency_days,
+        frequency,
+        monetary,
+        PERCENT_RANK() OVER (ORDER BY recency_days DESC) AS r_pct,
+        PERCENT_RANK() OVER (ORDER BY frequency ASC)     AS f_pct,
+        PERCENT_RANK() OVER (ORDER BY monetary ASC)      AS m_pct
+    FROM rfm_raw
+),
+scored AS (
+    SELECT
+        customer_id,
+        recency_days,
+        frequency,
+        monetary,
+        LEAST(5, FLOOR(r_pct * 5) + 1)::INT AS r_score,
+        LEAST(5, FLOOR(f_pct * 5) + 1)::INT AS f_score,
+        LEAST(5, FLOOR(m_pct * 5) + 1)::INT AS m_score
+    FROM ranked
+)
 SELECT
-    customer_id,
-    recency_days,
-    frequency,
-    monetary,
-    -- Recency is reversed: lower days since last purchase = higher score
-    6 - NTILE(5) OVER (ORDER BY recency_days ASC) AS r_score,
-    NTILE(5) OVER (ORDER BY frequency ASC) AS f_score,
-    NTILE(5) OVER (ORDER BY monetary ASC) AS m_score
-FROM rfm_raw;
-
--- STEP 3: Create Combined RFM Score and Label
-ALTER TABLE rfm_scored
-ADD COLUMN rfm_score INT,
-ADD COLUMN rfm_label VARCHAR(10);
-
-UPDATE rfm_scored
-SET
-    rfm_score = r_score + f_score + m_score,
-    rfm_label = CONCAT(r_score, f_score, m_score);
+    *,
+    r_score + f_score + m_score                    AS rfm_score,
+    CONCAT(r_score, f_score, m_score)::VARCHAR(10) AS rfm_label
+FROM scored;
